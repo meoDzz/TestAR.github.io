@@ -1,119 +1,105 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html>
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | plane_detection</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <title>Hello WebXR!</title>
+
+    <!-- three.js -->
+    <script src="https://unpkg.com/three@0.126.0/build/three.js"></script>
   </head>
   <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">plane_detection</div>
-      </div>
-    </div>
+    <!-- Starting an immersive WebXR session requires user interaction.
+    We start this one with a simple button. -->
+    <button onclick="activateXR()">Start Hello WebXR</button>
     <script>
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+      async function activateXR() {
+        // Add a canvas element and initialize a WebGL context that is compatible with WebXR.
+        const canvas = document.createElement("canvas");
+        document.body.appendChild(canvas);
+        const gl = canvas.getContext("webgl", { xrCompatible: true });
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
+        // To be continued in upcoming steps.
+        const scene = new THREE.Scene();
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/test.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/test.data",
-        frameworkUrl: buildUrl + "/test.framework.js",
-        codeUrl: buildUrl + "/test.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "plane_detection",
-        productVersion: "1.0",
-        showBanner: unityShowBanner,
-      };
+        // The cube will have a different color on each side.
+        const materials = [
+          new THREE.MeshBasicMaterial({ color: 0xff0000 }),
+          new THREE.MeshBasicMaterial({ color: 0x0000ff }),
+          new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
+          new THREE.MeshBasicMaterial({ color: 0xff00ff }),
+          new THREE.MeshBasicMaterial({ color: 0x00ffff }),
+          new THREE.MeshBasicMaterial({ color: 0xffff00 }),
+        ];
 
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+        // Create the cube and add it to the demo scene.
+        const cube = new THREE.Mesh(
+          new THREE.BoxBufferGeometry(0.2, 0.2, 0.2),
+          materials
+        );
+        cube.position.set(1, 1, 1);
+        scene.add(cube);
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-        unityShowBanner('WebGL builds are not supported on mobile devices.');
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
-      }
-
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
-        }).catch((message) => {
-          alert(message);
+        // Set up the WebGLRenderer, which handles rendering to the session's base layer.
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          preserveDrawingBuffer: true,
+          canvas: canvas,
+          context: gl,
         });
-      };
-      document.body.appendChild(script);
+        renderer.autoClear = false;
+
+        // The API directly updates the camera matrices.
+        // Disable matrix auto updates so three.js doesn't attempt
+        // to handle the matrices independently.
+        const camera = new THREE.PerspectiveCamera();
+        camera.matrixAutoUpdate = false;
+
+        // Initialize a WebXR session using "immersive-ar".
+        const session = await navigator.xr.requestSession("immersive-ar");
+        session.updateRenderState({
+          baseLayer: new XRWebGLLayer(session, gl),
+        });
+
+        // A 'local' reference space has a native origin that is located
+        // near the viewer's position at the time the session was created.
+        const referenceSpace = await session.requestReferenceSpace("local");
+
+        // Create a render loop that allows us to draw on the AR view.
+        const onXRFrame = (time, frame) => {
+          // Queue up the next draw request.
+          session.requestAnimationFrame(onXRFrame);
+
+          // Bind the graphics framebuffer to the baseLayer's framebuffer
+          gl.bindFramebuffer(
+            gl.FRAMEBUFFER,
+            session.renderState.baseLayer.framebuffer
+          );
+
+          // Retrieve the pose of the device.
+          // XRFrame.getViewerPose can return null while the session attempts to establish tracking.
+          const pose = frame.getViewerPose(referenceSpace);
+          if (pose) {
+            // In mobile AR, we only have one view.
+            const view = pose.views[0];
+
+            const viewport = session.renderState.baseLayer.getViewport(view);
+            renderer.setSize(viewport.width, viewport.height);
+
+            // Use the view's transform matrix and projection matrix to configure the THREE.camera.
+            camera.matrix.fromArray(view.transform.matrix);
+            camera.projectionMatrix.fromArray(view.projectionMatrix);
+            camera.updateMatrixWorld(true);
+
+            // Render the scene with THREE.WebGLRenderer.
+            renderer.render(scene, camera);
+          }
+        };
+        session.requestAnimationFrame(onXRFrame);
+      }
     </script>
   </body>
 </html>
